@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         String   @default("ADMIN")
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  payouts  Payout[]
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  displayName String
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  serviceRecords ServiceRecord[]
+  payouts        Payout[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  name      String?
+  phone     String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  serviceRecords ServiceRecord[]
+}
+
+model ServiceCatalog {
+  id              String   @id @default(cuid())
+  name            String
+  defaultPrice    Float
+  durationMinutes Int?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  serviceRecords ServiceRecord[]
+}
+
+model ServiceRecord {
+  id                String   @id @default(cuid())
+  dateTime          DateTime @default(now())
+  employeeId        String
+  customerId        String?
+  serviceCatalogId  String?
+  customServiceName String?
+  quantity          Int      @default(1)
+  unitPrice         Float
+  discountAmount    Float    @default(0)
+  finalPrice        Float
+  paymentMethod     String   @default("cash")
+  notes             String?
+  createdSource     String   @default("ENTRY_SCREEN")
+  deleted           Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+  customer       Customer?       @relation(fields: [customerId], references: [id])
+  serviceCatalog ServiceCatalog? @relation(fields: [serviceCatalogId], references: [id])
+}
+
+model Payout {
+  id             String   @id @default(cuid())
+  dateTime       DateTime @default(now())
+  employeeId     String
+  amount         Float
+  type           String   @default("advance")
+  notes          String?
+  createdByAdminId String
+  deleted        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+  createdBy   AdminUser @relation(fields: [createdByAdminId], references: [id])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorType  String
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  beforeJson String?
+  afterJson  String?
+  createdAt  DateTime @default(now())
+}
+
+model Settings {
+  id                  String  @id @default("singleton")
+  salonName           String  @default("Salon")
+  currency            String  @default("TRY")
+  timezone            String  @default("Europe/Istanbul")
+  entryPinHash        String?
+  entryScreenEnabled  Boolean @default(true)
+  entryPinEnabled     Boolean @default(false)
+}
