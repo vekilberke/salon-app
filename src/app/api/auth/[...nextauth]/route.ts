@@ -29,6 +29,10 @@ export const authOptions: AuthOptions = {
                     }
                 }
 
+                // Bootstrap admin user if needed (idempotent)
+                const { bootstrapAdmin } = await import('@/lib/bootstrapAdmin');
+                await bootstrapAdmin();
+
                 if (!credentials?.username || !credentials?.password) return null;
                 const user = await prisma.adminUser.findUnique({
                     where: { username: credentials.username },
