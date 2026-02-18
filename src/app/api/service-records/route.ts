@@ -58,7 +58,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    if (Number(finalPrice) < 0) {
+    const roundedFinalPrice = Math.round(Number(finalPrice) * 100) / 100;
+    const roundedUnitPrice = Math.round(Number(unitPrice) * 100) / 100;
+    const roundedDiscount = Math.round(Number(discountAmount) * 100) / 100;
+
+    if (roundedFinalPrice < 0) {
       return NextResponse.json({ error: 'Final price cannot be negative' }, { status: 400 });
     }
 
@@ -66,15 +70,32 @@ export async function POST(request: Request) {
     // Enforce createdSource: only admins can override it. Entry screen users are forced to 'ENTRY_SCREEN'
     const safeCreatedSource = session ? createdSource : 'ENTRY_SCREEN';
 
-    // If source is ENTRY_SCREEN, restrict to today only
+    // If source is ENTRY_SCREEN, restrict to today only (Istanbul time)
     if (safeCreatedSource === 'ENTRY_SCREEN' && dateTime) {
       const entryDate = new Date(dateTime);
-      const now = new Date();
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const recordDate = new Date(entryDate.getFullYear(), entryDate.getMonth(), entryDate.getDate());
-      if (recordDate.getTime() !== today.getTime()) {
+      // Get current date in Istanbul
+      const nowInIstanbul = new Date().toLocaleDateString('en-US', { timeZone: 'Europe/Istanbul' });
+      const entryInIstanbul = entryDate.toLocaleDateString('en-US', { timeZone: 'Europe/Istanbul' });
+
+      if (entryInIstanbul !== nowInIstanbul) {
         return NextResponse.json({ error: 'Entry screen can only create records for today' }, { status: 400 });
       }
+    }
+
+    // Duplicate Check (prevent double-submit)
+    // Look for a record with same employee, price, and created in last 5 seconds
+    const fiveSecondsAgo = new Date(Date.now() - 5000);
+    const duplicate = await prisma.serviceRecord.findFirst({
+      where: {
+        employeeId,
+        finalPrice: roundedFinalPrice,
+        createdAt: { gte: fiveSecondsAgo },
+        createdSource: safeCreatedSource
+      }
+    });
+
+    if (duplicate) {
+      return NextResponse.json({ error: 'Duplicate transaction detected' }, { status: 409 });
     }
 
     const record = await prisma.serviceRecord.create({
@@ -85,9 +106,9 @@ export async function POST(request: Request) {
         serviceCatalogId: serviceCatalogId || null,
         customServiceName: customServiceName || null,
         quantity: Number(quantity),
-        unitPrice: Number(unitPrice),
-        discountAmount: Number(discountAmount),
-        finalPrice: Number(finalPrice),
+        unitPrice: roundedUnitPrice,
+        discountAmount: roundedDiscount,
+        finalPrice: roundedFinalPrice,
         paymentMethod,
         notes: notes || null,
         createdSource: safeCreatedSource,

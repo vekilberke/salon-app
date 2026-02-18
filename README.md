@@ -37,6 +37,10 @@ These variables are **required** for the application to function correctly in pr
 
 > **⚠️ Security Note:** Never commit your `.env` file to GitHub. It is ignored by default.
 
+## 🕒 Timezone Configuration
+
+The application is hardcoded to use **Europe/Istanbul** (UTC+3) for all "Today", "Week", and "Month" calculations in the Dashboard and Entry screen. This ensures accurate daily reporting regardless of the server's timezone (e.g., Vercel UTC).
+
 ---
 
 ## ✅ Vercel + Neon Deployment Checklist

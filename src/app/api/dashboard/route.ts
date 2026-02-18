@@ -10,30 +10,44 @@ export async function GET(request: Request) {
         const to = searchParams.get('to');
         const period = searchParams.get('period') || 'today';
 
-        // Calculate date range
+        // Calculate date range (Istanbul Timezone)
+        // Turkey is UTC+3 permanently.
         const now = new Date();
+        const istanbulDateStr = now.toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' }); // YYYY-MM-DD
+
         let startDate: Date;
-        let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        let endDate: Date;
 
         if (from && to) {
             startDate = new Date(from);
             endDate = new Date(to + 'T23:59:59.999Z');
         } else {
+            // Default: derive from Istanbul date
+            // We construct ISO strings with +03:00 offset to ensure correct UTC conversion
+
+            const currentIstanbulDate = new Date(istanbulDateStr + 'T00:00:00.000+03:00');
+            endDate = new Date(istanbulDateStr + 'T23:59:59.999+03:00');
+
             switch (period) {
                 case 'week': {
-                    const day = now.getDay();
-                    const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-                    startDate = new Date(now.getFullYear(), now.getMonth(), diff);
+                    // Monday is start of week
+                    const day = currentIstanbulDate.getDay(); // 0=Sun, 1=Mon...
+                    const diff = currentIstanbulDate.getDate() - day + (day === 0 ? -6 : 1);
+                    const weekStart = new Date(currentIstanbulDate);
+                    weekStart.setDate(diff);
+                    // Format back to YYYY-MM-DD to combine with offset
+                    const weekStartStr = weekStart.toISOString().slice(0, 10);
+                    startDate = new Date(weekStartStr + 'T00:00:00.000+03:00');
                     break;
                 }
                 case 'month':
-                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    startDate = new Date(istanbulDateStr.slice(0, 7) + '-01T00:00:00.000+03:00');
                     break;
                 case 'year':
-                    startDate = new Date(now.getFullYear(), 0, 1);
+                    startDate = new Date(istanbulDateStr.slice(0, 4) + '-01-01T00:00:00.000+03:00');
                     break;
                 default: // today
-                    startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    startDate = new Date(istanbulDateStr + 'T00:00:00.000+03:00');
             }
         }
 

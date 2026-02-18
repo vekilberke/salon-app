@@ -90,7 +90,9 @@ export default function EntryPage() {
     useEffect(() => {
         const price = typeof formData.unitPrice === 'string' ? parseFloat(formData.unitPrice) || 0 : formData.unitPrice;
         const total = (formData.quantity * price) - formData.discountAmount;
-        setFinalPrice(Math.max(0, total));
+        // Round to 2 decimals
+        const rounded = Math.round(total * 100) / 100;
+        setFinalPrice(Math.max(0, rounded));
     }, [formData.quantity, formData.unitPrice, formData.discountAmount]);
 
     const verifyPin = async () => {
@@ -112,11 +114,12 @@ export default function EntryPage() {
     const selectEmployee = async (emp: Employee) => {
         setSelectedEmployee(emp);
 
-        // Get today's count for this employee
-        const today = new Date().toISOString().slice(0, 10);
+        // Get today's count for this employee (Istanbul time)
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Istanbul' });
         const res = await fetch(`/api/service-records?employeeId=${emp.id}&from=${today}&to=${today}`);
         const records = await res.json();
         setTodayCount(Array.isArray(records) ? records.length : 0);
+
 
         // Reset form
         setFormData({
@@ -143,6 +146,7 @@ export default function EntryPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (submitting) return;
         if (!selectedEmployee) return;
         if (finalPrice < 0) return;
 
