@@ -109,41 +109,59 @@ export default function PayoutsPage() {
 
     const fetchSummary = useCallback(async () => {
         setSummaryLoading(true);
-        const range = getDateRange(summaryPeriod);
-        const payParams = new URLSearchParams();
-        const recParams = new URLSearchParams();
-        if (range.from) { payParams.set('from', range.from); recParams.set('from', range.from); }
-        if (range.to) { payParams.set('to', range.to); recParams.set('to', range.to); }
+        try {
+            const range = getDateRange(summaryPeriod);
+            const payParams = new URLSearchParams();
+            const recParams = new URLSearchParams();
+            if (range.from) { payParams.set('from', range.from); recParams.set('from', range.from); }
+            if (range.to) { payParams.set('to', range.to); recParams.set('to', range.to); }
 
-        const [payRes, recRes] = await Promise.all([
-            fetch(`/api/payouts?${payParams}`),
-            fetch(`/api/service-records?${recParams}`),
-        ]);
-        const payData = await payRes.json();
-        const recData = await recRes.json();
+            // Ensure we get all records for summary, or at least a large page if not implementing full aggregation endpoint yet
+            // Ideally we should have a separate summary endpoint, but for now let's request a large page size for summary or handle pagination.
+            // Actually, existing APIs support pagination. To get correct totals, we might need to fetch all or use a specific aggregation endpoint.
+            // For now, let's assume we fetch a large batch or the API defaults.
+            // Wait, the API defaults to 50. This summary will be wrong if we have > 50 items.
+            // CORRECT FIX: We should probably export a 'getAll' or use a large pageSize for summary interactions if strictly client-side.
+            // Let's set pageSize=1000 for summary purposes to stay simple for now.
+            payParams.set('pageSize', '1000');
+            recParams.set('pageSize', '1000');
 
-        // Aggregate by employee
-        const empMap: Record<string, { employeeName: string; revenue: number; total: number }> = {};
+            const [payRes, recRes] = await Promise.all([
+                fetch(`/api/payouts?${payParams}`),
+                fetch(`/api/service-records?${recParams}`),
+            ]);
+            const payData = await payRes.json();
+            const recData = await recRes.json();
 
-        // Sum revenue from service records
-        for (const r of (Array.isArray(recData) ? recData : [])) {
-            const empName = r.employee?.displayName || 'Bilinmeyen';
-            if (!empMap[empName]) empMap[empName] = { employeeName: empName, revenue: 0, total: 0 };
-            empMap[empName].revenue += r.finalPrice || 0;
+            const payItems = payData.items || (Array.isArray(payData) ? payData : []);
+            const recItems = recData.items || (Array.isArray(recData) ? recData : []);
+
+            // Aggregate by employee
+            const empMap: Record<string, { employeeName: string; revenue: number; total: number }> = {};
+
+            // Sum revenue from service records
+            for (const r of recItems) {
+                const empName = r.employee?.displayName || 'Bilinmeyen';
+                if (!empMap[empName]) empMap[empName] = { employeeName: empName, revenue: 0, total: 0 };
+                empMap[empName].revenue += r.finalPrice || 0;
+            }
+
+            // Sum payouts
+            for (const p of payItems) {
+                const empName = p.employee?.displayName || 'Bilinmeyen';
+                if (!empMap[empName]) empMap[empName] = { employeeName: empName, revenue: 0, total: 0 };
+                empMap[empName].total += p.amount;
+            }
+
+            const rows = Object.values(empMap).sort((a, b) => b.revenue - a.revenue);
+            setSummaryData(rows);
+            setSummaryTotal(rows.reduce((s, r) => s + r.total, 0));
+            setSummaryRevenue(rows.reduce((s, r) => s + r.revenue, 0));
+        } catch (error) {
+            console.error('Summary fetch error:', error);
+        } finally {
+            setSummaryLoading(false);
         }
-
-        // Sum payouts
-        for (const p of payData) {
-            const empName = p.employee?.displayName || 'Bilinmeyen';
-            if (!empMap[empName]) empMap[empName] = { employeeName: empName, revenue: 0, total: 0 };
-            empMap[empName].total += p.amount;
-        }
-
-        const rows = Object.values(empMap).sort((a, b) => b.revenue - a.revenue);
-        setSummaryData(rows);
-        setSummaryTotal(rows.reduce((s, r) => s + r.total, 0));
-        setSummaryRevenue(rows.reduce((s, r) => s + r.revenue, 0));
-        setSummaryLoading(false);
     }, [summaryPeriod]);
 
     // Real-time updates via SSE

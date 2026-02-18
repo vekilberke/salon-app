@@ -25,9 +25,6 @@ This requires a Vercel deployment with a Postgres database (Neon recommended).
 
 ## ✨ New Features (Feb 2026)
 
-### 📊 Staff Performance Chart
-The Admin Dashboard now includes a visual performance chart comparing **Gross Revenue** vs. **Payouts/Advances** for each employee.
-
 ### 📥 Excel Export
 You can now export data to Excel (.xlsx) from:
 *   **Service Records**: Filter by date/employee and click "Excel İndir".
