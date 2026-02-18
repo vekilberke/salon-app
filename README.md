@@ -23,6 +23,26 @@ This requires a Vercel deployment with a Postgres database (Neon recommended).
 
 ---
 
+## ✨ New Features (Feb 2026)
+
+### 📊 Staff Performance Chart
+The Admin Dashboard now includes a visual performance chart comparing **Gross Revenue** vs. **Payouts/Advances** for each employee.
+
+### 📥 Excel Export
+You can now export data to Excel (.xlsx) from:
+*   **Service Records**: Filter by date/employee and click "Excel İndir".
+*   **Payouts**: Filter by date/employee and click "Excel İndir".
+
+### 📱 PWA Support
+The application is now a Progressive Web App (PWA).
+*   **Mobile**: Open in Safari (iOS) or Chrome (Android) and tap "Add to Home Screen" to install it as a native-like app.
+*   **Offline**: Static assets are cached for faster loading.
+
+### ⚡ Performance
+*   **Server-Side Pagination**: Large datasets in Records and Payouts are now paginated (50 items/page) for better performance.
+
+---
+
 ## 🛠️ Production Environment Variables
 
 These variables are **required** for the application to function correctly in production.

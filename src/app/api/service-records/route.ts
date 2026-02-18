@@ -13,6 +13,10 @@ export async function GET(request: Request) {
     const to = searchParams.get('to');
     const source = searchParams.get('source');
 
+    const page = parseInt(searchParams.get('page') || '1');
+    const pageSize = parseInt(searchParams.get('pageSize') || '50');
+    const isExport = searchParams.get('export') === 'excel';
+
     const where: any = { deleted: false };
     if (employeeId) where.employeeId = employeeId;
     if (source) where.createdSource = source;
@@ -22,12 +26,77 @@ export async function GET(request: Request) {
       if (to) where.dateTime.lte = new Date(to + 'T23:59:59.999Z');
     }
 
+    // Export Logic
+    if (isExport) {
+      const records = await prisma.serviceRecord.findMany({
+        where,
+        include: { employee: true, serviceCatalog: true, customer: true },
+        orderBy: { dateTime: 'desc' },
+      });
+
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Records');
+
+      worksheet.columns = [
+        { header: 'Date', key: 'date', width: 20 },
+        { header: 'Employee', key: 'employee', width: 20 },
+        { header: 'Customer', key: 'customer', width: 20 },
+        { header: 'Service', key: 'service', width: 25 },
+        { header: 'Qty', key: 'quantity', width: 10 },
+        { header: 'Unit Price', key: 'unitPrice', width: 15 },
+        { header: 'Discount', key: 'discount', width: 15 },
+        { header: 'Total', key: 'finalPrice', width: 15 },
+        { header: 'Payment', key: 'payment', width: 15 },
+        { header: 'Notes', key: 'notes', width: 30 },
+      ];
+
+      // Style header
+      worksheet.getRow(1).font = { bold: true };
+
+      records.forEach(r => {
+        worksheet.addRow({
+          date: new Date(r.dateTime).toLocaleString('tr-TR'),
+          employee: r.employee.displayName,
+          customer: r.customer?.name || '-',
+          service: r.customServiceName || r.serviceCatalog?.name || 'Unknown',
+          quantity: r.quantity,
+          unitPrice: r.unitPrice,
+          discount: r.discountAmount,
+          finalPrice: r.finalPrice,
+          payment: r.paymentMethod,
+          notes: r.notes || ''
+        });
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      return new NextResponse(buffer, {
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="service-records-${new Date().toISOString().slice(0, 10)}.xlsx"`
+        }
+      });
+    }
+
+    // Pagination Logic
+    const total = await prisma.serviceRecord.count({ where });
     const records = await prisma.serviceRecord.findMany({
       where,
       include: { employee: true, serviceCatalog: true, customer: true },
       orderBy: { dateTime: 'desc' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
     });
-    return NextResponse.json(records);
+
+    return NextResponse.json({
+      items: records,
+      meta: {
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize)
+      }
+    });
   } catch (error: any) {
     if (error.message === 'Unauthorized') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

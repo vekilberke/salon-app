@@ -49,6 +49,12 @@ export default function PayoutsPage() {
         employeeId: '', amount: '', type: 'advance', notes: '', dateTime: '',
     });
 
+    // Pagination state
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const pageSize = 50;
+
     // Summary table state
     const [summaryPeriod, setSummaryPeriod] = useState('month');
     const [summaryData, setSummaryData] = useState<SummaryRow[]>([]);
@@ -62,15 +68,44 @@ export default function PayoutsPage() {
         if (filters.employeeId) params.set('employeeId', filters.employeeId);
         if (filters.from) params.set('from', filters.from);
         if (filters.to) params.set('to', filters.to);
+        params.set('page', page.toString());
+        params.set('pageSize', pageSize.toString());
 
-        const [payRes, empRes] = await Promise.all([
-            fetch(`/api/payouts?${params}`),
-            fetch('/api/employees'),
-        ]);
-        setPayouts(await payRes.json());
-        setEmployees(await empRes.json());
-        setLoading(false);
-    }, [filters]);
+        try {
+            const [payRes, empRes] = await Promise.all([
+                fetch(`/api/payouts?${params}`),
+                fetch('/api/employees'),
+            ]);
+
+            const payData = await payRes.json();
+            if (payData.items) {
+                setPayouts(payData.items);
+                setTotal(payData.meta.total);
+                setTotalPages(payData.meta.totalPages);
+            } else {
+                setPayouts(payData); // Fallback
+            }
+
+            const empData = await empRes.json();
+            if (Array.isArray(empData)) {
+                setEmployees(empData);
+            }
+        } catch (error) {
+            console.error('Failed to fetch data', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [filters, page]);
+
+    const handleExport = () => {
+        const params = new URLSearchParams();
+        if (filters.employeeId) params.set('employeeId', filters.employeeId);
+        if (filters.from) params.set('from', filters.from);
+        if (filters.to) params.set('to', filters.to);
+        params.set('export', 'excel');
+
+        window.open(`/api/payouts?${params}`, '_blank');
+    };
 
     const fetchSummary = useCallback(async () => {
         setSummaryLoading(true);
@@ -183,6 +218,7 @@ export default function PayoutsPage() {
                 }}>+ Yeni Ödeme</button>
             </div>
 
+            {/* Filters */}
             <div className="card" style={{ marginBottom: '1.5rem' }}>
                 <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
                     <div className="form-group">
@@ -202,6 +238,11 @@ export default function PayoutsPage() {
                         <label className="label">Bitiş</label>
                         <input type="date" className="input" value={filters.to} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
                     </div>
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'flex-end' }}>
+                        <button className="btn btn-secondary" onClick={() => handleExport()} style={{ width: '100%' }}>
+                            Excel İndir
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -209,43 +250,60 @@ export default function PayoutsPage() {
                 {loading ? (
                     <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Yükleniyor...</div>
                 ) : (
-                    <div className="table-wrapper">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Tarih</th>
-                                    <th>Çalışan</th>
-                                    <th>Tutar</th>
-                                    <th>Tür</th>
-                                    <th>Not</th>
-                                    <th>Oluşturan</th>
-                                    <th>İşlem</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {payouts.map((p: any) => (
-                                    <tr key={p.id}>
-                                        <td style={{ whiteSpace: 'nowrap' }}>{new Date(p.dateTime).toLocaleDateString('tr-TR')}</td>
-                                        <td style={{ fontWeight: 500 }}>{p.employee?.displayName}</td>
-                                        <td style={{ fontWeight: 600, color: 'var(--warning)' }}>{formatCurrency(p.amount)}</td>
-                                        <td>
-                                            <span className="badge badge-warning">
-                                                {payoutTypes.find(t => t.value === p.type)?.label || p.type}
-                                            </span>
-                                        </td>
-                                        <td style={{ color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.notes || '-'}</td>
-                                        <td style={{ color: 'var(--text-secondary)' }}>{p.createdBy?.username || '-'}</td>
-                                        <td>
-                                            <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>Sil</button>
-                                        </td>
+                    <>
+                        <div className="table-wrapper">
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Tarih</th>
+                                        <th>Çalışan</th>
+                                        <th>Tutar</th>
+                                        <th>Tür</th>
+                                        <th>Not</th>
+                                        <th>Oluşturan</th>
+                                        <th>İşlem</th>
                                     </tr>
-                                ))}
-                                {payouts.length === 0 && (
-                                    <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Ödeme bulunamadı</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    {payouts.map((p: any) => (
+                                        <tr key={p.id}>
+                                            <td style={{ whiteSpace: 'nowrap' }}>{new Date(p.dateTime).toLocaleDateString('tr-TR')}</td>
+                                            <td style={{ fontWeight: 500 }}>{p.employee?.displayName}</td>
+                                            <td style={{ fontWeight: 600, color: 'var(--warning)' }}>{formatCurrency(p.amount)}</td>
+                                            <td>
+                                                <span className="badge badge-warning">
+                                                    {payoutTypes.find(t => t.value === p.type)?.label || p.type}
+                                                </span>
+                                            </td>
+                                            <td style={{ color: 'var(--text-secondary)', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.notes || '-'}</td>
+                                            <td style={{ color: 'var(--text-secondary)' }}>{p.createdBy?.username || '-'}</td>
+                                            <td>
+                                                <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id)}>Sil</button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {payouts.length === 0 && (
+                                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Ödeme bulunamadı</td></tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Controls */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                Toplam {total} kayıt (Sayfa {page} / {totalPages})
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button className="btn btn-secondary btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
+                                    Önceki
+                                </button>
+                                <button className="btn btn-secondary btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
+                                    Sonraki
+                                </button>
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
 

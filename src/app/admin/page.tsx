@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import StatCard from '@/components/StatCard';
+import StaffPerformanceChart from '@/components/StaffPerformanceChart';
 
 interface EmployeeStat {
     employee: { id: string; displayName: string };
@@ -87,6 +88,13 @@ export default function AdminDashboard() {
 
     const sortedStats = [...data.employeeStats].sort((a, b) => b.grossRevenue - a.grossRevenue);
 
+    // Prepare chart data
+    const chartData = sortedStats.map(s => ({
+        name: s.employee.displayName,
+        revenue: s.grossRevenue,
+        payouts: s.totalPayouts
+    }));
+
     return (
         <div>
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
@@ -136,6 +144,14 @@ export default function AdminDashboard() {
                         WebkitTextFillColor: 'transparent',
                     }}
                 />
+            </div>
+
+            {/* Chart Section */}
+            <div className="card" style={{ marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem' }}>
+                    📈 Performans Grafiği
+                </h3>
+                <StaffPerformanceChart data={chartData} />
             </div>
 
             {/* Leaderboard */}
