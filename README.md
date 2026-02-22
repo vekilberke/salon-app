@@ -25,10 +25,27 @@ This requires a Vercel deployment with a Postgres database (Neon recommended).
 
 ## ✨ New Features (Feb 2026)
 
+### 💸 Genel Giderler (Expenses)
+Track salon expenses (supplies, rent, maintenance) from `/admin/expenses`.
+*   Add expenses with title, category, amount, and optional notes.
+*   Filter by: Bu Hafta, Bu Ay, Tüm Zamanlar, or custom date range.
+*   Monthly expense total shown on the Dashboard.
+
 ### 📥 Excel Export
-You can now export data to Excel (.xlsx) from:
-*   **Service Records**: Filter by date/employee and click "Excel İndir".
-*   **Payouts**: Filter by date/employee and click "Excel İndir".
+All report downloads now generate `.xlsx` files (replaced CSV).
+*   **Hizmet Kayıtları**: Service records with bold headers, frozen top row, TRY currency formatting.
+*   **Ödeme Kayıtları**: Payout records in a separate sheet.
+*   **Tüm Veriler**: Two-sheet workbook combining both.
+*   Respects all filters (employee, date range).
+
+### ➕ Dashboard Quick Entry
+A "+" button on the Dashboard lets admins create ServiceRecords directly.
+*   Select employee → fill service form → submit.
+*   Records are created with `createdSource=ADMIN`.
+*   Dashboard auto-refreshes after submission.
+
+### 📄 Audit Log Pagination
+The İşlem Günlüğü page now shows 25 rows per page (improved from previous larger page size).
 
 ### 📱 PWA Support
 The application is now a Progressive Web App (PWA).

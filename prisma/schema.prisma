@@ -105,6 +105,18 @@ model AuditLog {
   createdAt  DateTime @default(now())
 }
 
+model Expense {
+  id        String   @id @default(cuid())
+  dateTime  DateTime @default(now())
+  title     String
+  category  String?
+  amount    Float
+  notes     String?
+  createdBy String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Settings {
   id                  String  @id @default("singleton")
   salonName           String  @default("Salon")

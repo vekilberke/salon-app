@@ -105,11 +105,22 @@ export async function GET(request: Request) {
             take: 10,
         });
 
+        // Monthly expenses (always current month regardless of period)
+        const monthStart = new Date(istanbulDateStr.slice(0, 7) + '-01T00:00:00.000+03:00');
+        const monthEndStr = istanbulDateStr + 'T23:59:59.999+03:00';
+        const monthlyExpenses = await prisma.expense.aggregate({
+            where: {
+                dateTime: { gte: monthStart, lte: new Date(monthEndStr) },
+            },
+            _sum: { amount: true },
+        });
+
         return NextResponse.json({
             period,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
             totals: { totalRevenue, totalVisits, totalPayouts: totalAllPayouts, totalNet },
+            monthlyExpensesTotal: monthlyExpenses._sum.amount || 0,
             employeeStats,
             recentRecords,
         });

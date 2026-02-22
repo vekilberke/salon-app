@@ -10,7 +10,7 @@ export default function AuditLogPage() {
 
     const fetchLogs = useCallback(async () => {
         setLoading(true);
-        const res = await fetch(`/api/audit-log?page=${page}&limit=30`);
+        const res = await fetch(`/api/audit-log?page=${page}&limit=25`);
         const data = await res.json();
         setLogs(data.logs || []);
         setTotalPages(data.totalPages || 1);

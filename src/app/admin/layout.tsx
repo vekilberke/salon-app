@@ -12,6 +12,7 @@ const navItems = [
     { href: '/admin/services', label: 'Hizmetler', icon: '✂️' },
     { href: '/admin/records', label: 'İşlem Kayıtları', icon: '📋' },
     { href: '/admin/payouts', label: 'Ödemeler / Avans', icon: '💰' },
+    { href: '/admin/expenses', label: 'Genel Giderler', icon: '💸' },
     { href: '/admin/reports', label: 'Raporlar', icon: '📈' },
     { href: '/admin/audit-log', label: 'İşlem Günlüğü', icon: '🔍' },
     { href: '/admin/settings', label: 'Ayarlar', icon: '⚙️' },

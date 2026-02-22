@@ -4,25 +4,25 @@ import { useState, useEffect } from 'react';
 
 export default function ReportsPage() {
     const [employees, setEmployees] = useState<any[]>([]);
-    const [filters, setFilters] = useState({ employeeId: '', from: '', to: '', type: 'all' });
+    const [filters, setFilters] = useState({ employeeId: '', from: '', to: '' });
 
     useEffect(() => {
         fetch('/api/employees').then(r => r.json()).then(setEmployees);
     }, []);
 
-    const exportCSV = async (type: string) => {
+    const exportExcel = async (type: string) => {
         const params = new URLSearchParams();
         params.set('type', type);
         if (filters.employeeId) params.set('employeeId', filters.employeeId);
         if (filters.from) params.set('from', filters.from);
         if (filters.to) params.set('to', filters.to);
 
-        const res = await fetch(`/api/export/csv?${params}`);
+        const res = await fetch(`/api/export/excel?${params}`);
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `salon-rapor-${type}-${new Date().toISOString().slice(0, 10)}.csv`;
+        a.download = `salon-rapor-${type}-${new Date().toISOString().slice(0, 10)}.xlsx`;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -31,7 +31,7 @@ export default function ReportsPage() {
         <div>
             <div className="page-header">
                 <h2>Raporlar</h2>
-                <p>Verileri CSV olarak dışa aktar</p>
+                <p>Verileri Excel olarak dışa aktar</p>
             </div>
 
             <div className="card" style={{ marginBottom: '1.5rem' }}>
@@ -62,10 +62,10 @@ export default function ReportsPage() {
                     <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>📋</div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Hizmet Kayıtları</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                        Tüm hizmet işlem kayıtlarını CSV olarak indir
+                        Tüm hizmet işlem kayıtlarını Excel olarak indir
                     </p>
-                    <button className="btn btn-primary btn-lg" onClick={() => exportCSV('records')}>
-                        📥 CSV İndir
+                    <button className="btn btn-primary btn-lg" onClick={() => exportExcel('records')}>
+                        📥 Excel İndir
                     </button>
                 </div>
 
@@ -73,10 +73,10 @@ export default function ReportsPage() {
                     <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>💰</div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Ödeme Kayıtları</h3>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
-                        Tüm avans ve ödeme kayıtlarını CSV olarak indir
+                        Tüm avans ve ödeme kayıtlarını Excel olarak indir
                     </p>
-                    <button className="btn btn-primary btn-lg" onClick={() => exportCSV('payouts')}>
-                        📥 CSV İndir
+                    <button className="btn btn-primary btn-lg" onClick={() => exportExcel('payouts')}>
+                        📥 Excel İndir
                     </button>
                 </div>
 
@@ -86,8 +86,8 @@ export default function ReportsPage() {
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
                         Hem hizmet hem ödeme kayıtlarını tek dosyada indir
                     </p>
-                    <button className="btn btn-primary btn-lg" onClick={() => exportCSV('all')}>
-                        📥 CSV İndir
+                    <button className="btn btn-primary btn-lg" onClick={() => exportExcel('all')}>
+                        📥 Excel İndir
                     </button>
                 </div>
             </div>
