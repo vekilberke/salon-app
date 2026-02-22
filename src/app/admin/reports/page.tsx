@@ -27,6 +27,21 @@ export default function ReportsPage() {
         URL.revokeObjectURL(url);
     };
 
+    const exportExpenses = async () => {
+        const params = new URLSearchParams();
+        if (filters.from) params.set('from', filters.from);
+        if (filters.to) params.set('to', filters.to);
+
+        const res = await fetch(`/api/export/expenses?${params}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `genel-giderler-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div>
             <div className="page-header">
@@ -87,6 +102,20 @@ export default function ReportsPage() {
                         Hem hizmet hem ödeme kayıtlarını tek dosyada indir
                     </p>
                     <button className="btn btn-primary btn-lg" onClick={() => exportExcel('all')}>
+                        📥 Excel İndir
+                    </button>
+                </div>
+
+                <div className="card" style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>💸</div>
+                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '0.5rem' }}>Genel Giderler</h3>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                        Salon gider kayıtlarını Excel olarak indir
+                    </p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginBottom: '1rem', fontStyle: 'italic' }}>
+                        ℹ️ Çalışan filtresi giderlerde uygulanmaz
+                    </p>
+                    <button className="btn btn-primary btn-lg" onClick={exportExpenses}>
                         📥 Excel İndir
                     </button>
                 </div>

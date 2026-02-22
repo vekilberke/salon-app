@@ -125,4 +125,5 @@ model Settings {
   entryPinHash        String?
   entryScreenEnabled  Boolean @default(true)
   entryPinEnabled     Boolean @default(false)
+  salonLogoDataUrl    String? @db.Text
 }

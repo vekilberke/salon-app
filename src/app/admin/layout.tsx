@@ -22,11 +22,15 @@ function AdminSidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [salonName, setSalonName] = useState('');
+    const [salonLogo, setSalonLogo] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/settings')
             .then(res => res.json())
-            .then(data => setSalonName(data.salonName || 'Salon'))
+            .then(data => {
+                setSalonName(data.salonName || 'Salon');
+                setSalonLogo(data.salonLogoDataUrl || null);
+            })
             .catch(() => setSalonName('Salon'));
     }, []);
 
@@ -35,6 +39,13 @@ function AdminSidebar() {
         const handler = (e: CustomEvent) => setSalonName(e.detail);
         window.addEventListener('salonNameChanged', handler as EventListener);
         return () => window.removeEventListener('salonNameChanged', handler as EventListener);
+    }, []);
+
+    // Listen for logo changes
+    useEffect(() => {
+        const handler = (e: CustomEvent) => setSalonLogo(e.detail);
+        window.addEventListener('salonLogoChanged', handler as EventListener);
+        return () => window.removeEventListener('salonLogoChanged', handler as EventListener);
     }, []);
 
     return (
@@ -49,7 +60,20 @@ function AdminSidebar() {
 
             <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
                 <div className="sidebar-brand">
-                    <h1>{salonName || 'Salon'}</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {salonLogo && (
+                            <img
+                                src={salonLogo}
+                                alt="Logo"
+                                style={{
+                                    width: '32px', height: '32px', borderRadius: '50%',
+                                    objectFit: 'cover', flexShrink: 0,
+                                    border: '2px solid rgba(255,255,255,0.2)',
+                                }}
+                            />
+                        )}
+                        <h1>{salonName || 'Salon'}</h1>
+                    </div>
                     <span>Yönetim Paneli</span>
                 </div>
 

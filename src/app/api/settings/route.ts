@@ -53,6 +53,23 @@ export async function PUT(request: Request) {
             }
         }
 
+        // Logo: accept base64 data URL or null to clear
+        if (body.salonLogoDataUrl !== undefined) {
+            if (body.salonLogoDataUrl === null || body.salonLogoDataUrl === '') {
+                data.salonLogoDataUrl = null;
+            } else {
+                const logo = String(body.salonLogoDataUrl);
+                // Validate: must be data URL, max ~2.7MB (base64 of 2MB)
+                if (!logo.startsWith('data:image/')) {
+                    return NextResponse.json({ error: 'Invalid logo format' }, { status: 400 });
+                }
+                if (logo.length > 2_800_000) {
+                    return NextResponse.json({ error: 'Logo too large (max 2MB)' }, { status: 400 });
+                }
+                data.salonLogoDataUrl = logo;
+            }
+        }
+
         const settings = await prisma.settings.upsert({
             where: { id: 'singleton' },
             update: data,

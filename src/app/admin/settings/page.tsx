@@ -68,6 +68,43 @@ export default function SettingsPage() {
         fetchSettings();
     };
 
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (!file.type.match(/^image\/(png|jpe?g|webp)$/)) {
+            setToast({ message: 'Sadece PNG, JPG veya WebP yükleyebilirsiniz', type: 'error' });
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            setToast({ message: 'Logo en fazla 2MB olabilir', type: 'error' });
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = async (ev) => {
+            const dataUrl = ev.target?.result as string;
+            setSettings({ ...settings, salonLogoDataUrl: dataUrl });
+            await fetch('/api/settings', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ salonLogoDataUrl: dataUrl }),
+            });
+            setToast({ message: 'Logo güncellendi ✓', type: 'success' });
+            window.dispatchEvent(new CustomEvent('salonLogoChanged', { detail: dataUrl }));
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleLogoRemove = async () => {
+        setSettings({ ...settings, salonLogoDataUrl: null });
+        await fetch('/api/settings', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ salonLogoDataUrl: null }),
+        });
+        setToast({ message: 'Logo silindi ✓', type: 'success' });
+        window.dispatchEvent(new CustomEvent('salonLogoChanged', { detail: null }));
+    };
+
     if (loading || !settings) return <div style={{ padding: '2rem', color: 'var(--text-muted)' }}>Yükleniyor...</div>;
 
     return (
@@ -113,6 +150,53 @@ export default function SettingsPage() {
                 <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
                     {saving ? 'Kaydediliyor...' : 'Kaydet'}
                 </button>
+            </div>
+
+            {/* Logo Settings */}
+            <div className="card" style={{ marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1.25rem' }}>🖼️ Salon Logosu</h3>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                    Yönetim paneli başlığında görünecek logo (PNG, JPG veya WebP, maks 2MB)
+                </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    {settings.salonLogoDataUrl ? (
+                        <div style={{ position: 'relative' }}>
+                            <img
+                                src={settings.salonLogoDataUrl}
+                                alt="Salon Logo"
+                                style={{
+                                    width: '80px', height: '80px', objectFit: 'cover',
+                                    borderRadius: 'var(--radius-md)', border: '2px solid var(--border)',
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{
+                            width: '80px', height: '80px', borderRadius: 'var(--radius-md)',
+                            border: '2px dashed var(--border)', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)',
+                            fontSize: '2rem',
+                        }}>
+                            🏪
+                        </div>
+                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label className="btn btn-secondary" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                            📤 {settings.salonLogoDataUrl ? 'Logo Değiştir' : 'Logo Yükle'}
+                            <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                onChange={handleLogoUpload}
+                                style={{ display: 'none' }}
+                            />
+                        </label>
+                        {settings.salonLogoDataUrl && (
+                            <button className="btn btn-danger btn-sm" onClick={handleLogoRemove}>
+                                🗑️ Kaldır
+                            </button>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Entry Screen Settings */}

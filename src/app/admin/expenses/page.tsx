@@ -85,6 +85,24 @@ export default function ExpensesPage() {
 
     const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
 
+    const exportExcel = async () => {
+        const params = new URLSearchParams();
+        if (period === 'custom' && customFrom && customTo) {
+            params.set('from', customFrom);
+            params.set('to', customTo);
+        } else {
+            params.set('period', period);
+        }
+        const res = await fetch(`/api/export/expenses?${params}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `genel-giderler-${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div>
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
@@ -92,9 +110,14 @@ export default function ExpensesPage() {
                     <h2>Genel Giderler</h2>
                     <p>Salon giderlerini kaydet ve takip et</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
-                    + Yeni Gider Ekle
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button className="btn btn-secondary" onClick={exportExcel}>
+                        📥 Excel İndir
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setModalOpen(true)}>
+                        + Yeni Gider Ekle
+                    </button>
+                </div>
             </div>
 
             {/* Filters */}
