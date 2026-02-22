@@ -92,7 +92,6 @@ function AdminSidebar() {
                         )}
                         <span className="brand-chip-name">{salonName || 'Salon'}</span>
                     </div>
-                    <span>Yönetim Paneli</span>
                 </div>
 
                 <nav className="sidebar-nav">
