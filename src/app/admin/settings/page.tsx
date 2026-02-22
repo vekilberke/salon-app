@@ -26,6 +26,7 @@ export default function SettingsPage() {
             timezone: settings.timezone,
             entryScreenEnabled: settings.entryScreenEnabled,
             entryPinEnabled: settings.entryPinEnabled,
+            adminTabTitle: settings.adminTabTitle || null,
         };
 
         await fetch('/api/settings', {
@@ -38,6 +39,7 @@ export default function SettingsPage() {
         setToast({ message: 'Ayarlar kaydedildi ✓', type: 'success' });
         // Notify sidebar of salon name change
         window.dispatchEvent(new CustomEvent('salonNameChanged', { detail: settings.salonName }));
+        window.dispatchEvent(new CustomEvent('adminTabTitleChanged', { detail: settings.adminTabTitle || '' }));
     };
 
     const handleSetPin = async () => {
@@ -145,6 +147,11 @@ export default function SettingsPage() {
                             <option value="Europe/Istanbul">Europe/Istanbul</option>
                             <option value="UTC">UTC</option>
                         </select>
+                    </div>
+                    <div className="form-group">
+                        <label className="label">Sekme Başlığı</label>
+                        <input className="input" value={settings.adminTabTitle || ''} onChange={(e) => setSettings({ ...settings, adminTabTitle: e.target.value })} placeholder="Salon Yönetim Paneli" />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Tarayıcı sekmesinde görünen başlık</span>
                     </div>
                 </div>
                 <button className="btn btn-primary" onClick={handleSave} disabled={saving}>

@@ -126,4 +126,5 @@ model Settings {
   entryScreenEnabled  Boolean @default(true)
   entryPinEnabled     Boolean @default(false)
   salonLogoDataUrl    String? @db.Text
+  adminTabTitle       String?
 }

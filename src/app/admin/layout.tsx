@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Providers from '@/components/Providers';
 
+const DEFAULT_TAB_TITLE = 'Salon Yönetim Paneli';
+
 const navItems = [
     { href: '/admin', label: 'Dashboard', icon: '📊' },
     { href: '/admin/employees', label: 'Çalışanlar', icon: '👥' },
@@ -30,6 +32,8 @@ function AdminSidebar() {
             .then(data => {
                 setSalonName(data.salonName || 'Salon');
                 setSalonLogo(data.salonLogoDataUrl || null);
+                // Set tab title
+                document.title = data.adminTabTitle || DEFAULT_TAB_TITLE;
             })
             .catch(() => setSalonName('Salon'));
     }, []);
@@ -48,6 +52,20 @@ function AdminSidebar() {
         return () => window.removeEventListener('salonLogoChanged', handler as EventListener);
     }, []);
 
+    // Listen for tab title changes
+    useEffect(() => {
+        const handler = (e: CustomEvent) => {
+            document.title = e.detail || DEFAULT_TAB_TITLE;
+        };
+        window.addEventListener('adminTabTitleChanged', handler as EventListener);
+        return () => window.removeEventListener('adminTabTitleChanged', handler as EventListener);
+    }, []);
+
+    // Generate initials for fallback avatar
+    const getInitials = (name: string) => {
+        return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '✂';
+    };
+
     return (
         <>
             <button
@@ -60,19 +78,19 @@ function AdminSidebar() {
 
             <aside className={`sidebar ${mobileOpen ? 'open' : ''}`}>
                 <div className="sidebar-brand">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        {salonLogo && (
+                    <div className="brand-chip">
+                        {salonLogo ? (
                             <img
                                 src={salonLogo}
                                 alt="Logo"
-                                style={{
-                                    width: '32px', height: '32px', borderRadius: '50%',
-                                    objectFit: 'cover', flexShrink: 0,
-                                    border: '2px solid rgba(255,255,255,0.2)',
-                                }}
+                                className="brand-chip-logo"
                             />
+                        ) : (
+                            <div className="brand-chip-fallback">
+                                {getInitials(salonName || 'Salon')}
+                            </div>
                         )}
-                        <h1>{salonName || 'Salon'}</h1>
+                        <span className="brand-chip-name">{salonName || 'Salon'}</span>
                     </div>
                     <span>Yönetim Paneli</span>
                 </div>

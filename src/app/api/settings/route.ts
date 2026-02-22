@@ -44,6 +44,7 @@ export async function PUT(request: Request) {
         if (body.timezone !== undefined) data.timezone = body.timezone;
         if (body.entryScreenEnabled !== undefined) data.entryScreenEnabled = body.entryScreenEnabled;
         if (body.entryPinEnabled !== undefined) data.entryPinEnabled = body.entryPinEnabled;
+        if (body.adminTabTitle !== undefined) data.adminTabTitle = body.adminTabTitle || null;
 
         if (body.entryPin !== undefined) {
             if (body.entryPin === null || body.entryPin === '') {
