@@ -21,6 +21,7 @@ export default function ExpensesPage() {
     const [modalOpen, setModalOpen] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [form, setForm] = useState({ title: '', category: '', amount: '', notes: '', dateTime: '' });
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -84,6 +85,17 @@ export default function ExpensesPage() {
     };
 
     const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        try {
+            await fetch(`/api/expenses/${deleteId}`, { method: 'DELETE' });
+            setDeleteId(null);
+            fetchData();
+        } catch (err) {
+            console.error('Failed to delete expense:', err);
+        }
+    };
 
     const exportExcel = async () => {
         const params = new URLSearchParams();
@@ -180,6 +192,7 @@ export default function ExpensesPage() {
                                         <th>Kategori</th>
                                         <th>Tutar</th>
                                         <th>Not</th>
+                                        <th>İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -196,10 +209,20 @@ export default function ExpensesPage() {
                                             <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                                 {exp.notes || '-'}
                                             </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-danger btn-sm"
+                                                    onClick={() => setDeleteId(exp.id)}
+                                                    title="Sil"
+                                                    style={{ padding: '0.25rem 0.5rem', fontSize: '0.8125rem' }}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
                                         </tr>
                                     ))}
                                     {expenses.length === 0 && (
-                                        <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Gider kaydı bulunamadı</td></tr>
+                                        <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Gider kaydı bulunamadı</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -290,6 +313,23 @@ export default function ExpensesPage() {
                         {submitting ? 'Kaydediliyor...' : '✓ Kaydet'}
                     </button>
                 </form>
+            </Modal>
+
+            {/* Delete Confirmation Modal */}
+            <Modal isOpen={!!deleteId} onClose={() => setDeleteId(null)} title="Gider Sil">
+                <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+                    <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)' }}>
+                        Bu gider silinsin mi? Bu işlem geri alınamaz.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
+                        <button className="btn btn-secondary" onClick={() => setDeleteId(null)}>
+                            İptal
+                        </button>
+                        <button className="btn btn-danger" onClick={handleDelete}>
+                            🗑️ Sil
+                        </button>
+                    </div>
+                </div>
             </Modal>
         </div>
     );
