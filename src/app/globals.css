@@ -84,6 +84,7 @@ body {
   border-radius: var(--radius-md);
   padding: 1.5rem;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 .card:hover {
@@ -176,6 +177,7 @@ body {
 .select,
 .textarea {
   width: 100%;
+  max-width: 100%;
   padding: 0.625rem 0.875rem;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -184,6 +186,7 @@ body {
   font-size: 0.875rem;
   transition: all 0.2s ease;
   outline: none;
+  box-sizing: border-box;
 }
 
 .input:focus,
@@ -850,6 +853,15 @@ body {
 
   .main-content .page-header {
     padding-top: 3.5rem;
+  }
+
+  .main-content {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .card {
+    padding: 1rem;
   }
 
   .form-grid {
